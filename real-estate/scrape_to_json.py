@@ -1,6 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+import json
+import time
 
 ads_dataframe = pd.DataFrame(columns=[''])
 
@@ -72,7 +74,7 @@ class BazarakiWebScraper:
             address = 'Not found'
 
         try:
-            price = listing_soup.find('meta', attrs={'itemprop': 'price'}).attrs.get('content', '')
+            price = listing_soup.find('div', attrs={'class': 'announcement-price__cost'}).text.strip()
         except AttributeError:
             price = 'Not found'
 
@@ -96,6 +98,7 @@ class BazarakiWebScraper:
                 'id': id,
                 'title': title,
                 'listing_date': listing_date,
+                'url': listing.url,
                 'address': address,
                 'price': price,
                 'property_characteristics': property_characteristics
@@ -115,5 +118,10 @@ if __name__ == '__main__':
         page_dictionary_object = webscraper._extract_info_from_listing(listing)
         if page_dictionary_object:
             webscraper.listings.append(page_dictionary_object)
+
+        time.sleep(1)
         
     property_listings = webscraper.listings
+
+    with open('property_listings.json', 'w') as f:
+        json.dump(property_listings, f)
