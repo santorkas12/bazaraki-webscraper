@@ -3,6 +3,8 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import json
 import time
+from json_to_df import CSVWriter
+import sys
 
 ads_dataframe = pd.DataFrame(columns=[''])
 
@@ -114,18 +116,26 @@ class BazarakiWebScraper:
 
 
     def collect_request_params(self):
-        rent_or_buy = input("Are you looking to rent or buy a property? (rent|buy)")
+        if __name__ == '__main__':
+            print(__name__)
+            rent_or_buy = input("Are you looking to rent or buy a property? (rent|buy)")
+            type_of_property = input("What type of property are you looking for? (apartments-flats|houses|plots-of-land)")
+            if type_of_property in {'apartments-flats', 'houses'}:
+                no_bedrooms = input('How many bedrooms? (1|2|3|4|5)')
+                no_bedrooms = f'number-of-bedrooms---{no_bedrooms}'
+        else:
+            rent_or_buy = sys.argv[1]
+            type_of_property = sys.argv[2]
+            if type_of_property in {'apartments-flats', 'houses'}:
+                no_bedrooms = sys.argv[3]
+                no_bedrooms = f'number-of-bedrooms---{no_bedrooms}'
+
         if rent_or_buy == 'rent':
             rent_or_buy = 'real-estate-to-rent'
         else:
             rent_or_buy = 'real-estate-for-sale'
 
-        type_of_property = input("What type of property are you looking for? (apartments-flats|houses|plots-of-land)")
         district = 'lefkosia-district-nicosia'
-
-        if type_of_property in {'apartments-flats', 'houses'}:
-            no_bedrooms = input('How many bedrooms? (1|2|3|4|5)')
-            no_bedrooms = f'number-of-bedrooms---{no_bedrooms}'
 
         request_info = {
             'rent_or_buy': rent_or_buy,
@@ -140,6 +150,7 @@ class BazarakiWebScraper:
 if __name__ == '__main__':
     webscraper = BazarakiWebScraper()
     request_params = webscraper.collect_request_params()
+    print(f'Running script with params {json.dumps(request_params)}')
     url = webscraper._setup_url(**request_params)
     listing_urls = webscraper.get_ad_urls(url)
 
@@ -156,3 +167,6 @@ if __name__ == '__main__':
 
     with open('property_listings.json', 'w') as f:
         json.dump(property_listings, f)
+
+    csv_writer = CSVWriter()
+    csv_writer.write_to_csv()
