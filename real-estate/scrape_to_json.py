@@ -3,6 +3,8 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import json
 import time
+from json_to_df import CSVWriter
+import sys
 
 ads_dataframe = pd.DataFrame(columns=[''])
 
@@ -14,11 +16,14 @@ class BazarakiWebScraper:
         self.ad_urls = set()
         self.listings = []
 
-    def __get_page(self, page_number):
-        if page_number == 1:
-            url = f'{self.domain}/real-estate/houses-and-villas-rent/number-of-bedrooms---2/lefkosia-district-nicosia/'
-        else:
-            url = f'{self.domain}/real-estate/houses-and-villas-rent/number-of-bedrooms---2/lefkosia-district-nicosia/?page={page_number}'
+    def _setup_url(self, **request_info):
+        url = f'{self.domain}/{request_info.get("rent_or_buy")}/{request_info.get("type_of_property")}/{request_info.get("no_bedrooms")}/{request_info.get("district")}/'
+        return url
+
+    def __get_page(self, url, page_number):
+        print(f'Getting page {page_number}')
+        if page_number > 1:
+            url = f'{url}?page={page_number}'
 
         webpage = requests.get(url)
 
@@ -30,16 +35,16 @@ class BazarakiWebScraper:
             if str(link := url.attrs['href']).startswith('/adv/'):
                 self.ad_urls.add(link)
 
-    def get_ad_urls(self):
+    def get_ad_urls(self, url):
         page_number = 1
-        webpage = self.__get_page(page_number)
+        webpage = self.__get_page(url, page_number)
         
         while not webpage.history:
             soup = BeautifulSoup(webpage.content, "html.parser")
             self._extract_urls_from_list(soup)
             
             page_number += 1
-            webpage = self.__get_page(page_number)
+            webpage = self.__get_page(url, page_number)
 
         return self.ad_urls
 
@@ -109,11 +114,48 @@ class BazarakiWebScraper:
     def create_listing_df(self, listing_urls):
         pass
 
+
+    def collect_request_params(self):
+        if __name__ == '__main__':
+            print(__name__)
+            rent_or_buy = input("Are you looking to rent or buy a property? (rent|buy)")
+            type_of_property = input("What type of property are you looking for? (apartments-flats|houses|plots-of-land)")
+            if type_of_property in {'apartments-flats', 'houses'}:
+                no_bedrooms = input('How many bedrooms? (1|2|3|4|5)')
+                no_bedrooms = f'number-of-bedrooms---{no_bedrooms}'
+        else:
+            rent_or_buy = sys.argv[1]
+            type_of_property = sys.argv[2]
+            if type_of_property in {'apartments-flats', 'houses'}:
+                no_bedrooms = sys.argv[3]
+                no_bedrooms = f'number-of-bedrooms---{no_bedrooms}'
+
+        if rent_or_buy == 'rent':
+            rent_or_buy = 'real-estate-to-rent'
+        else:
+            rent_or_buy = 'real-estate-for-sale'
+
+        district = 'lefkosia-district-nicosia'
+
+        request_info = {
+            'rent_or_buy': rent_or_buy,
+            'type_of_property': type_of_property,
+            'district': district,
+            'no_bedrooms': locals().get('no_bedrooms')
+            }
+        
+        return request_info
+
+
 if __name__ == '__main__':
     webscraper = BazarakiWebScraper()
-    listing_urls = webscraper.get_ad_urls()
+    request_params = webscraper.collect_request_params()
+    print(f'Running script with params {json.dumps(request_params)}')
+    url = webscraper._setup_url(**request_params)
+    listing_urls = webscraper.get_ad_urls(url)
 
-    for url in listing_urls:
+    for index, url in enumerate(listing_urls):
+        print(f'Processing url {index+1} of {len(listing_urls)}')
         listing = webscraper._get_listing(url)
         page_dictionary_object = webscraper._extract_info_from_listing(listing)
         if page_dictionary_object:
@@ -125,3 +167,6 @@ if __name__ == '__main__':
 
     with open('property_listings.json', 'w') as f:
         json.dump(property_listings, f)
+
+    csv_writer = CSVWriter()
+    csv_writer.write_to_csv()
