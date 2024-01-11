@@ -8,10 +8,10 @@ pd.set_option('display.max_columns', None)
 class CSVWriter:
     current_time = datetime.datetime.now(pytz.timezone('Europe/Nicosia')).strftime('%m-%d-%Y_%H-%M-%S')
 
-    def write_to_csv(self):
+    @classmethod
+    def write_to_csv(cls):
         with open('property_listings.json', 'r') as f:
             property_listings = json.load(f)
-
 
         sample_dataframe = pd.DataFrame(property_listings)
 
@@ -22,5 +22,6 @@ class CSVWriter:
 
         listings_dataframe = pd.concat([sample_dataframe, property_characteristics], axis=1)
         listings_dataframe.drop('property_characteristics', axis=1, inplace=True)
-        listings_dataframe.to_csv(f'listings/listings_{self.current_time}.csv')
-        print(f'Successfully exported results to listings/listings_{self.current_time}.csv')
+        listings_dataframe.to_csv(f'C:\github\\bazaraki-webscraper\listings\listings_{cls.current_time}.csv')
+        print(f'Successfully exported results to listings/listings_{cls.current_time}.csv')
+        

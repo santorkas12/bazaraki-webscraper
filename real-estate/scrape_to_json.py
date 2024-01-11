@@ -117,7 +117,6 @@ class BazarakiWebScraper:
 
     def collect_request_params(self):
         if __name__ == '__main__':
-            print(__name__)
             rent_or_buy = input("Are you looking to rent or buy a property? (rent|buy)")
             type_of_property = input("What type of property are you looking for? (apartments-flats|houses|plots-of-land)")
             if type_of_property in {'apartments-flats', 'houses'}:
@@ -168,5 +167,4 @@ if __name__ == '__main__':
     with open('property_listings.json', 'w') as f:
         json.dump(property_listings, f)
 
-    csv_writer = CSVWriter()
-    csv_writer.write_to_csv()
+    CSVWriter.write_to_csv()
